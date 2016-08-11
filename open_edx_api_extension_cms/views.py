@@ -22,7 +22,7 @@ def create_or_rerun_course(request):
     else:
         raise PermissionDenied()
     response = _create_or_rerun_course(request)
-    if not response.status_code >= 400:
+    if response.status_code >= 400:
         return response
     course_key = response.json.get("course_key")
     CourseDetails.update_from_json(course_key, request.json, global_stuff)
