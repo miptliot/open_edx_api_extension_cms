@@ -3,17 +3,18 @@ from contentstore.views.course import _create_or_rerun_course
 from rest_framework.decorators import api_view, permission_classes
 from django.views.decorators.csrf import csrf_exempt
 from openedx.core.lib.api.permissions import ApiKeyHeaderPermission
-from student.models import CourseAccessRole
-from student.roles import CourseCreatorRole
+from django.contrib.auth import get_user_model
 
 log = logging.getLogger(__name__)
+
+User = get_user_model()
 
 
 @csrf_exempt
 @api_view(['POST'])
 @permission_classes([ApiKeyHeaderPermission])
 def create_or_rerun_course(request):
-    course_creators = CourseAccessRole.objects.filter(role=CourseCreatorRole.ROLE)
-    if course_creators.exists():
-        request.user = course_creators[0].user
+    global_stuff = User.objects.filter(is_staff=True)
+    if global_stuff.exists():
+        request.user = global_stuff[0]
     return _create_or_rerun_course(request)
