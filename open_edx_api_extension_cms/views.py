@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from openedx.core.lib.api.permissions import ApiKeyHeaderPermission
 from django.contrib.auth import get_user_model
 from openedx.core.djangoapps.models.course_details import CourseDetails
+from xmodule.modulestore.django import modulestore
 
 log = logging.getLogger(__name__)
 
@@ -27,5 +28,9 @@ def create_or_rerun_course(request):
     response = _create_or_rerun_course(request)
     if response.status_code >= 400:
         return response
-    course_key = CourseKey.from_string(json.loads(response.content).get("course_key"))
+    course_key_string = json.loads(response.content).get("course_key")
+    if course_key_string is not None:
+        course_key = CourseKey.from_string(course_key_string)
+    else:
+        course_key = modulestore().make_course_key(request.json["org"], request.json["number"], request.json["run"])
     CourseDetails.update_from_json(course_key, request.json, global_stuff)
