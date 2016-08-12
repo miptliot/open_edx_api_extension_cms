@@ -10,6 +10,8 @@ from openedx.core.lib.api.permissions import ApiKeyHeaderPermission
 from django.contrib.auth import get_user_model
 from openedx.core.djangoapps.models.course_details import CourseDetails
 from xmodule.modulestore.django import modulestore
+from util.json_request import JsonResponse
+from contentstore.utils import reverse_course_url
 
 log = logging.getLogger(__name__)
 
@@ -34,3 +36,7 @@ def create_or_rerun_course(request):
     else:
         course_key = modulestore().make_course_key(request.json["org"], request.json["number"], request.json["run"])
     CourseDetails.update_from_json(course_key, request.json, global_stuff)
+    return JsonResponse({
+        'url': reverse_course_url('course_handler', course_key),
+        'course_key': unicode(course_key),
+    })
