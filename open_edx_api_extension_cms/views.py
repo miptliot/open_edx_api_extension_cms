@@ -52,7 +52,7 @@ def create_or_rerun_course(request):
             defaults["mode_display_name"] = mode["title"],
         if "description" in mode:
             defaults["description"] = mode["description"]
-        CourseMode.objects.create_or_update(course_id=course_key, mode_slug=mode["mode"], defaults=defaults)
+        CourseMode.objects.update_or_create(course_id=course_key, mode_slug=mode["mode"], defaults=defaults)
     return JsonResponse({
         'url': reverse_course_url('course_handler', course_key),
         'course_key': unicode(course_key),
