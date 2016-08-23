@@ -12,6 +12,7 @@ from openedx.core.djangoapps.models.course_details import CourseDetails
 from xmodule.modulestore.django import modulestore
 from util.json_request import JsonResponse
 from contentstore.utils import reverse_course_url
+from course_modes.models import CourseMode
 
 log = logging.getLogger(__name__)
 
@@ -36,6 +37,22 @@ def create_or_rerun_course(request):
     else:
         course_key = modulestore().make_course_key(request.json["org"], request.json["number"], request.json["run"])
     CourseDetails.update_from_json(course_key, request.json, global_stuff)
+    modes = request.json.get("course_modes", [])
+    CourseMode.objects.filter(course_id=course_key).exclude(mode_slug__in=[mode["mode"] for mode in modes]).delete()
+    for mode in modes:
+        defaults = {
+            "course_id": course_key,
+            "mode_slug": mode["mode"],
+        }
+        if "price" in mode:
+            defaults["min_price"] = mode["price"],
+        if "currency" in mode:
+            defaults["currency"] = mode["currency"],
+        if "title" in mode:
+            defaults["mode_display_name"] = mode["title"],
+        if "description" in mode:
+            defaults["description"] = mode["description"]
+        CourseMode.objects.create_or_update(course_id=course_key, mode_slug=mode["mode"], defaults=defaults)
     return JsonResponse({
         'url': reverse_course_url('course_handler', course_key),
         'course_key': unicode(course_key),
