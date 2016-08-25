@@ -40,20 +40,20 @@ def create_or_rerun_course(request):
     modes = request.json.get("course_modes", [])
     CourseMode.objects.filter(course_id=course_key).exclude(mode_slug__in=[mode["mode"] for mode in modes]).delete()
     for mode in modes:
-        defaults = {
+        mode_params = {
             "course_id": course_key,
-            "mode_slug": mode["mode"],
+            "mode_slug": mode["mode"]
         }
         if "price" in mode:
-            defaults["min_price"] = mode["price"],
+            mode_params["min_price"] = mode["price"]
         if "currency" in mode:
-            defaults["currency"] = mode["currency"],
+            mode_params["currency"] = mode["currency"]
         if "title" in mode:
-            defaults["mode_display_name"] = mode["title"],
+            mode_params["mode_display_name"] = mode["title"]
         if "description" in mode:
-            defaults["description"] = mode["description"]
-        CourseMode.objects.update_or_create(course_id=course_key, mode_slug=mode["mode"], defaults=defaults)
+            mode_params["description"] = mode["description"]
+        CourseMode.objects.update_or_create(course_id=course_key, mode_slug=mode["mode"], defaults=mode_params)
     return JsonResponse({
         'url': reverse_course_url('course_handler', course_key),
-        'course_key': unicode(course_key),
+        'course_key': unicode(course_key)
     })
