@@ -52,6 +52,8 @@ def create_or_rerun_course(request):
             mode_params["mode_display_name"] = mode["title"]
         if "description" in mode:
             mode_params["description"] = mode["description"]
+        if "upgrade_deadline" in mode:
+            mode_params["_expiration_datetime"] = mode["upgrade_deadline"]
         CourseMode.objects.update_or_create(course_id=course_key, mode_slug=mode["mode"], defaults=mode_params)
     return JsonResponse({
         'url': reverse_course_url('course_handler', course_key),
