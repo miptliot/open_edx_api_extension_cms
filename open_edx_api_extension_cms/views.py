@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from openedx.core.lib.api.permissions import ApiKeyHeaderPermission
 from django.contrib.auth import get_user_model
 from openedx.core.djangoapps.models.course_details import CourseDetails
+from openedx.core.djangoapps.course_groups.cohorts import set_course_cohort_settings
 from xmodule.modulestore.django import modulestore
 from util.json_request import JsonResponse
 from contentstore.utils import reverse_course_url
@@ -37,6 +38,7 @@ def create_or_rerun_course(request):
     else:
         course_key = modulestore().make_course_key(request.json["org"], request.json["number"], request.json["run"])
     CourseDetails.update_from_json(course_key, request.json, global_stuff)
+    set_course_cohort_settings(course_key, is_cohorted=True)
     modes = request.json.get("course_modes", [])
     CourseMode.objects.filter(course_id=course_key).exclude(mode_slug__in=[mode["mode"] for mode in modes]).delete()
     for mode in modes:
