@@ -24,6 +24,88 @@ User = get_user_model()
 @api_view(['POST'])
 @permission_classes([ApiKeyHeaderPermission])
 def create_or_rerun_course(request):
+    """
+        **Use Case**
+
+            Create or edit course.
+
+        **Example Requests**
+
+            POST /api/extended/course/{
+                "org": "test_org",
+                "number": "test_course_num",
+                "display_name": "TEST COURSE NAME",
+                "run": "test_course_run",
+                "start_date": "2016-09-01",
+                "end_date": "2017-05-31",
+                "enrollment_start": "2016-08-15",
+                "enrollment_end": "2016-10-31",
+                "intro_video": "jsUdxcBsym0?list=PLWdgcBEz6133fTE9ePks31tT1QBLNaxFe",
+                "syllabus": "123",
+                "short_description": "456",
+                "overview": "789",
+                "effort": "40",
+                "language": "ru",
+                "course_modes": [
+                    {
+                        "mode": "honor",
+                        "title": "test"
+                    }
+                ]
+            }
+
+        **Post Parameters**
+
+            * org: Organization that owns course (slug)
+
+            * number: Course slug
+
+            * display_name: Course run display name for edX
+
+            * run: Course run slug
+
+            * start_date: Date when course starts
+
+            * end_date: Date when course finishes
+
+            * enrollment_start: Date when enrollment for course is opened
+
+            * enrollment_end: Date when enrollment for course is closed
+
+            * intro_video: Code of course introduction video on youtube (with player parameters)
+
+            * syllabus: Course syllabus
+
+            * short_description: Course short description
+
+            * overview: Course overview
+
+            * effort: Course effort (ni weeks)
+
+            * language: Two-letter code of course language
+
+            * course_modes: List of course modes.
+
+                Course mode params:
+
+                    * mode: Mode type ("audit", "honor" or "verified")
+
+                    * price: Course mode price
+
+                    * currency: Currency of course mode price
+
+                    * title: Course mode title
+
+                    * description: Course mode description
+
+                    * upgrade_deadline: Last date when user can be enrolled/reenrolled to this mode
+
+        **Response Values**
+
+            * url: Course URL for CMS and LMS
+            * course_key: The unique identifier for the course (full slug)
+    """
+
     global_stuff = User.objects.filter(is_staff=True).first()
     if global_stuff is not None:
         request.user = global_stuff
