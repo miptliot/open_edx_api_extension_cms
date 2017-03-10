@@ -3,13 +3,16 @@ from contentstore.views.course import _create_or_rerun_course
 from django.core.exceptions import PermissionDenied
 import json
 
+from opaque_keys import InvalidKeyError
 from opaque_keys.edx.keys import CourseKey
 from rest_framework.decorators import api_view, permission_classes
 from django.views.decorators.csrf import csrf_exempt
 from openedx.core.lib.api.permissions import ApiKeyHeaderPermission
 from django.contrib.auth import get_user_model
 from openedx.core.djangoapps.models.course_details import CourseDetails
+from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
 from openedx.core.djangoapps.course_groups.cohorts import set_course_cohort_settings
+from rest_framework import status
 from xmodule.modulestore.django import modulestore
 from util.json_request import JsonResponse
 from contentstore.utils import reverse_course_url
@@ -143,3 +146,20 @@ def create_or_rerun_course(request):
         'url': reverse_course_url('course_handler', course_key),
         'course_key': unicode(course_key)
     })
+
+
+@csrf_exempt
+@api_view(['GET'])
+@permission_classes([ApiKeyHeaderPermission])
+def check_course_exists(request):
+    course_id = request.query_params.get('course_id', None)
+    try:
+        course_key = CourseKey.from_string(course_id)
+    except InvalidKeyError:
+        return JsonResponse({"error": "Wrong course_id format"}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        CourseOverview.get_from_id(course_key)
+    except CourseOverview.DoesNotExist:
+        return JsonResponse({"exists": False})
+    else:
+        return JsonResponse({"exists": True})
