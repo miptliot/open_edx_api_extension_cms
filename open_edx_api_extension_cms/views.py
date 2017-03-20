@@ -14,7 +14,7 @@ from openedx.core.djangoapps.content.course_overviews.models import CourseOvervi
 from openedx.core.djangoapps.course_groups.cohorts import set_course_cohort_settings
 from rest_framework import status
 from xmodule.modulestore.django import modulestore
-from util.json_request import JsonResponse
+from util.json_request import JsonResponse, expect_json
 from contentstore.utils import reverse_course_url
 from course_modes.models import CourseMode
 
@@ -24,9 +24,10 @@ User = get_user_model()
 
 
 @csrf_exempt
+@expect_json
 @api_view(['POST'])
 @permission_classes([ApiKeyHeaderPermission])
-def create_or_rerun_course(request):
+def create_or_update_course(request):
     """
         **Use Case**
 
@@ -114,14 +115,18 @@ def create_or_rerun_course(request):
         request.user = global_stuff
     else:
         raise PermissionDenied()
-    response = _create_or_rerun_course(request)
-    if response.status_code >= 400:
-        return response
-    course_key_string = json.loads(response.content).get("course_key")
-    if course_key_string is not None:
-        course_key = CourseKey.from_string(course_key_string)
-    else:
-        course_key = modulestore().make_course_key(request.json["org"], request.json["number"], request.json["run"])
+
+    course_key = modulestore().make_course_key(request.json["org"], request.json["number"], request.json["run"])
+    course_key = modulestore().has_course(course_key)
+    if course_key is None:
+        response = _create_or_rerun_course(request)
+        if response.status_code >= 400:
+            return response
+        course_key_string = json.loads(response.content).get("course_key")
+        if course_key_string is not None:
+            course_key = CourseKey.from_string(course_key_string)
+        else:
+            return response
     CourseDetails.update_from_json(course_key, request.json, global_stuff)
     set_course_cohort_settings(course_key, is_cohorted=True)
     modes = request.json.get("course_modes", [])
@@ -157,9 +162,5 @@ def check_course_exists(request):
         course_key = CourseKey.from_string(course_id)
     except InvalidKeyError:
         return JsonResponse({"error": "Wrong course_id format"}, status=status.HTTP_400_BAD_REQUEST)
-    try:
-        CourseOverview.get_from_id(course_key)
-    except CourseOverview.DoesNotExist:
-        return JsonResponse({"exists": False})
-    else:
-        return JsonResponse({"exists": True})
+    course_key = modulestore().has_course(course_key)
+    return JsonResponse({"exists": course_key is not None})
