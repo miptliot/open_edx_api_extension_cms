@@ -17,6 +17,7 @@ from xmodule.modulestore.django import modulestore
 from util.json_request import JsonResponse, expect_json
 from contentstore.utils import reverse_course_url
 from course_modes.models import CourseMode
+from xmodule.course_module import DEFAULT_START_DATE
 
 log = logging.getLogger(__name__)
 
@@ -127,7 +128,10 @@ def create_or_update_course(request):
             course_key = CourseKey.from_string(course_key_string)
         else:
             return response
-    CourseDetails.update_from_json(course_key, request.json, global_stuff)
+    course_data = request.json.copy()
+    if course_data["start_date"] is None:
+        course_data["start_date"] = format(DEFAULT_START_DATE, "%Y-%m-%d")
+    CourseDetails.update_from_json(course_key, course_data, global_stuff)
     set_course_cohort_settings(course_key, is_cohorted=True)
     modes = request.json.get("course_modes", [])
     CourseMode.objects.filter(course_id=course_key).exclude(mode_slug__in=[mode["mode"] for mode in modes]).delete()
