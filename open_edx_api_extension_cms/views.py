@@ -154,6 +154,79 @@ def create_or_update_course(request):
 
 
 @csrf_exempt
+@expect_json
+@api_view(['POST'])
+@permission_classes([ApiKeyHeaderPermission])
+def rerun_course(request):
+    """
+        **Use Case**
+
+            Rerun course.
+
+        **Example Requests**
+
+            POST /api/extended/course-rerun/{
+                "org": "test_org",
+                "number": "test_course_num",
+                "display_name": "TEST COURSE NAME",
+                "run": "test_course_run",
+                "source_course_key": "course-v1:source_org+source_course+source_run",
+                "start": "2016-09-01"
+            }
+
+        **Post Parameters**
+
+            * org: Organization that owns course (slug)
+
+            * number: Course slug
+
+            * display_name: Course run display name for edX
+
+            * run: Course run slug
+            
+            * source_course_key: full slug of source course for rerun.
+
+            * start: Date when course starts
+
+        **Response Values**
+            
+            If all ok:
+                response with 200 code
+                    * url: Course URL for CMS and LMS
+                    * course_key: The unique identifier for the course (full slug)
+            else:
+                response with 400 code
+                    * error: Error description
+    """
+
+    global_stuff = User.objects.filter(is_staff=True).first()
+    if global_stuff is not None:
+        request.user = global_stuff
+    else:
+        raise PermissionDenied()
+
+    missing_parameters = {"org", "number", "run", "display_name", "source_course_key"} - request.json.viewkeys()
+    if missing_parameters:
+        return JsonResponse({"error": "Some parameters missing: {}".format(", ".join(missing_parameters))},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+    course_key = modulestore().make_course_key(request.json["org"], request.json["number"], request.json["run"])
+    course_key = modulestore().has_course(course_key)
+    if course_key is not None:
+        return JsonResponse({"error": "Course with such parameters already exists"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        source_course_key = CourseKey.from_string(request.json["source_course_key"])
+    except InvalidKeyError:
+        return JsonResponse({"error": "Wrong source_course_key format"}, status=status.HTTP_400_BAD_REQUEST)
+    source_course_key = modulestore().has_course(source_course_key)
+    if source_course_key is None:
+        return JsonResponse({"error": "Source course doesn't exist"}, status=status.HTTP_400_BAD_REQUEST)
+
+    return _create_or_rerun_course(request)
+
+
+@csrf_exempt
 @api_view(['GET'])
 @permission_classes([ApiKeyHeaderPermission])
 def check_course_exists(request):
