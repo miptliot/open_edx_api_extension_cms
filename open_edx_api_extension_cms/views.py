@@ -42,9 +42,7 @@ def create_or_update_course(request):
                 "display_name": "TEST COURSE NAME",
                 "run": "test_course_run",
                 "start_date": "2016-09-01",
-                "end_date": "2017-05-31",
                 "enrollment_start": "2016-08-15",
-                "enrollment_end": "2016-10-31",
                 "intro_video": "jsUdxcBsym0?list=PLWdgcBEz6133fTE9ePks31tT1QBLNaxFe",
                 "syllabus": "123",
                 "short_description": "456",
@@ -71,11 +69,7 @@ def create_or_update_course(request):
 
             * start_date: Date when course starts
 
-            * end_date: Date when course finishes
-
             * enrollment_start: Date when enrollment for course is opened
-
-            * enrollment_end: Date when enrollment for course is closed
 
             * intro_video: Code of course introduction video on youtube (with player parameters)
 
@@ -131,6 +125,8 @@ def create_or_update_course(request):
     course_data = request.json.copy()
     if course_data["start_date"] is None:
         course_data["start_date"] = format(DEFAULT_START_DATE, "%Y-%m-%d")
+    course_data["end_date"] = format(DEFAULT_START_DATE, "%Y-%m-%d")
+    course_data["enrollment_end"] = format(DEFAULT_START_DATE, "%Y-%m-%d")
     CourseDetails.update_from_json(course_key, course_data, global_stuff)
     set_course_cohort_settings(course_key, is_cohorted=True)
     modes = request.json.get("course_modes", [])
