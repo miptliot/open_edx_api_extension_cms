@@ -4,28 +4,22 @@ API extension for Open edX CMS
 
 Installation:
 ```bash
-pip install -e git+http://mpetrov@kallithea.local/ru/npoed/open_edx_api_extension_cms@develop#egg=open_edx_api_extension_cms
+sudo -Hu edxapp /edx/bin/pip.edxapp install -e git+https://github.com/miptliot/open_edx_api_extension_cms@release-2017-07-04#egg=open_edx_api_extension_cms
 ```
 
-Add in file `cms/envs/common.py`
+Set `EDX_API_KEY` in `cms.auth.json`
+
+Add into file `cms/envs/npoed.py`
 ```python
-INSTALLED_APPS = (
-    ...
+EDX_API_KEY = AUTH_TOKENS.get("EDX_API_KEY")
+INSTALLED_APPS += (
     'open_edx_api_extension_cms',
 )
 ```
 
-Add in file `cms/urls.py`
+Add into file `cms/urls.py`
 ```python
-urlpatterns = (
-    ...
+urlpatterns += (
     url(r'^api/extended/', include('open_edx_api_extension_cms.urls', namespace='api_extension')),
 )
 ```
-
-Add in file `cms/envs/aws.py`
-```python
-EDX_API_KEY = AUTH_TOKENS.get("EDX_API_KEY")
-```
-
-Set `EDX_API_KEY` in `cms.auth.json`
