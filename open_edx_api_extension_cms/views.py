@@ -11,7 +11,7 @@ from openedx.core.lib.api.permissions import ApiKeyHeaderPermission
 from django.contrib.auth import get_user_model
 from openedx.core.djangoapps.models.course_details import CourseDetails
 from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
-from openedx.core.djangoapps.course_groups.cohorts import set_course_cohort_settings
+from openedx.core.djangoapps.course_groups.cohorts import set_course_cohorted
 from rest_framework import status
 from xmodule.modulestore.django import modulestore
 from util.json_request import JsonResponse, expect_json
@@ -129,7 +129,7 @@ def create_or_update_course(request):
         course_data["end_date"] = format(DEFAULT_START_DATE, "%Y-%m-%d")
         course_data["enrollment_end"] = format(DEFAULT_START_DATE, "%Y-%m-%d")
         CourseDetails.update_from_json(course_key, course_data, global_stuff)
-        set_course_cohort_settings(course_key, is_cohorted=True)
+        set_course_cohorted(course_key, is_cohorted=True)
         modes = request.json.get("course_modes", [])
         CourseMode.objects.filter(course_id=course_key).exclude(mode_slug__in=[mode["mode"] for mode in modes]).delete()
         for mode in modes:
