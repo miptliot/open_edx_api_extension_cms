@@ -129,7 +129,7 @@ def create_or_update_course(request):
         course_data["end_date"] = format(DEFAULT_START_DATE, "%Y-%m-%d")
         course_data["enrollment_end"] = format(DEFAULT_START_DATE, "%Y-%m-%d")
         CourseDetails.update_from_json(course_key, course_data, global_stuff)
-        set_course_cohorted(course_key, is_cohorted=True)
+        set_course_cohorted(course_key, True)
         modes = request.json.get("course_modes", [])
         CourseMode.objects.filter(course_id=course_key).exclude(mode_slug__in=[mode["mode"] for mode in modes]).delete()
         for mode in modes:
