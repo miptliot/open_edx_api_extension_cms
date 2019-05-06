@@ -1,0 +1,1 @@
+default_app_config = 'open_edx_api_extension_cms.apps.OpenEdxApiExtensionXmsConfig'
