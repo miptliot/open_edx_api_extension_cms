@@ -2,6 +2,7 @@ import logging
 from contentstore.views.course import _create_or_rerun_course
 from django.core.exceptions import PermissionDenied
 import json
+import datetime
 
 from opaque_keys import InvalidKeyError
 from opaque_keys.edx.keys import CourseKey
@@ -9,6 +10,7 @@ from rest_framework.decorators import api_view, permission_classes
 from django.views.decorators.csrf import csrf_exempt
 from openedx.core.lib.api.permissions import ApiKeyHeaderPermission
 from django.contrib.auth import get_user_model
+from django.http import HttpResponseBadRequest
 from openedx.core.djangoapps.models.course_details import CourseDetails
 from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
 from openedx.core.djangoapps.course_groups.cohorts import set_course_cohorted
@@ -111,7 +113,21 @@ def create_or_update_course(request):
     else:
         raise PermissionDenied()
 
-    course_key = modulestore().make_course_key(request.json["org"], request.json["number"], request.json["run"])
+    try:
+        course_key = modulestore().make_course_key(request.json["org"], request.json["number"], request.json["run"])
+    except InvalidKeyError:
+        return HttpResponseBadRequest('Invalid course key')
+
+    DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+
+    for date_key in ['start_date', 'end_date', 'enrollment_start', 'enrollment_end']:
+        date_value = request.json.get(date_key)
+        if date_value:
+            try:
+                datetime.datetime.strptime(date_value, DATETIME_FORMAT)
+            except ValueError:
+                return HttpResponseBadRequest('Invalid "' + date_key + '" value')
+
     with modulestore().bulk_operations(course_key):
         course_key = modulestore().has_course(course_key)
         if course_key is None:
@@ -184,13 +200,13 @@ def rerun_course(request):
             * display_name: Course run display name for edX
 
             * run: Course run slug
-            
+
             * source_course_key: full slug of source course for rerun.
 
             * start: Date when course starts
 
         **Response Values**
-            
+
             If all ok:
                 response with 200 code
                     * url: Course URL for CMS and LMS
