@@ -140,10 +140,12 @@ def create_or_update_course(request):
             else:
                 return response
         course_data = request.json.copy()
-        if course_data["start_date"] is None:
+        if not course_data.get("start_date"):
             course_data["start_date"] = format(DEFAULT_START_DATE, "%Y-%m-%d")
-        course_data["end_date"] = format(DEFAULT_START_DATE, "%Y-%m-%d")
-        course_data["enrollment_end"] = format(DEFAULT_START_DATE, "%Y-%m-%d")
+        if not course_data.get("end_date"):
+            course_data["end_date"] = format(DEFAULT_START_DATE, "%Y-%m-%d")
+        if not course_data.get("enrollment_end"):
+            course_data["enrollment_end"] = format(DEFAULT_START_DATE, "%Y-%m-%d")
         CourseDetails.update_from_json(course_key, course_data, granted_user)
         set_course_cohorted(course_key, True)
         modes = request.json.get("course_modes", [])
